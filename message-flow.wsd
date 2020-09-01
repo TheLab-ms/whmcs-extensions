@@ -1,0 +1,30 @@
+title Member Lifecycle
+actor Member
+note left of Member: New Member
+Member->WHMCS: Orders Membership
+WHMCS->Member: Redirect to Payment
+Member->Payment: Sign-in and approve
+Payment->WHMCS: Payment accepted
+WHMCS->Member: Order complete
+WHMCS->SmartWaiver: Checks for waiver (email)
+alt No Waiver on file
+    SmartWaiver->WHMCS: No Waiver on file
+    WHMCS->SmartWaiver: Requests Waiver to be sent
+    SmartWaiver->Member: Email Waiver to sign
+    Member->SmartWaiver: Sign Waiver
+end
+SmartWaiver->WHMCS: Waiver Filled out
+
+Member->WHMCS: Enter Badge RFID tag
+opt Once Member is Active and Waiver completed
+    WHMCS->Badge System: Activate Badge (RFID tag)
+end
+
+note left of Member: Member Loses Badge
+Member->WHMCS: Member changes badge number
+WHMCS->Badge System: Disables old badge
+WHMCS->Badge System: Activates new badge
+
+note left of Member: Member Cancels
+Member->WHMCS: Member Cancels
+WHMCS->Badge System: Badge is deactivated
