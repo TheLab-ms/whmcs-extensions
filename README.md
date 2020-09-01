@@ -19,7 +19,13 @@ To manage members and guests for TheLab, we need to consider:
 
 ## Usage
 
+The high level flow of the design is based off of this flow diagram:
 ![Member Message Flow](web-sequence-diagrams/member-message-flow.png)
+
+## Resources 
+* [Documentation for writing WHMCS hooks](https://developers.whmcs.com/hooks/)
+* [Source Code for TheLab WHMCS hooks](src/hooks)
+
 
 ## License
 
@@ -28,5 +34,6 @@ Distributed under the MIT License. See LICENSE for more information.
 ## Contact
 
 Email: CTO @ TheLab.ms
+
 Slack: https://thelab.slack.com #access-control 
 
