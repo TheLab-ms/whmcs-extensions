@@ -6,25 +6,29 @@ WHMCS->Member: Redirect to Payment
 Member->Payment: Sign-in and approve
 Payment->WHMCS: Payment accepted
 WHMCS->Member: Order complete
-WHMCS->SmartWaiver: Checks for waiver (email)
-alt No Waiver on file
-    SmartWaiver->WHMCS: No Waiver on file
-    WHMCS->SmartWaiver: Requests Waiver to be sent
-    SmartWaiver->Member: Email Waiver to sign
-    Member->SmartWaiver: Sign Waiver
-end
-SmartWaiver->WHMCS: Waiver Filled out
-
 Member->WHMCS: Enter Badge RFID tag
-opt Once Member is Active and Waiver completed
+
+WHMCS->SmartWaiver: ClientAdd Hook: Check for waiver (Name, email)
+
+alt Waiver Found
+    SmartWaiver->WHMCS: Add Waiver ID to Client
+    WHMCS->Badge System: Activate Badge (RFID tag)
+end
+
+
+alt Waiver NOT found
+    SmartWaiver->WHMCS: No Waiver found
+    WHMCS->Member: Email Waiver to sign
+    Member->SmartWaiver: Sign Waiver
+    SmartWaiver->WHMCS: Waiver Filled out
     WHMCS->Badge System: Activate Badge (RFID tag)
 end
 
 note left of Member: Member Loses Badge
-Member->WHMCS: Member changes badge number
-WHMCS->Badge System: Disables old badge
-WHMCS->Badge System: Activates new badge
+Member->WHMCS: Enter Badge RFID tag
+WHMCS->Badge System: Deactivate old badge
+WHMCS->Badge System: Activate new badge
 
 note left of Member: Member Cancels
-Member->WHMCS: Member Cancels
-WHMCS->Badge System: Badge is deactivated
+Member->WHMCS: Member Cancels Renewal
+WHMCS->Badge System: Deactivate badge
