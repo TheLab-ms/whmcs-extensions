@@ -1,0 +1,124 @@
+---
+
+version: "3.2"
+
+services:
+  traefik:
+    image: traefik:latest
+    container_name: traefik
+    restart: always
+    volumes:
+      - /data/traefik:/etc/traefik
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /etc/localtime:/etc/localtime:ro
+    ports:
+      - "80:80/tcp"
+      - "443:443/tcp"
+      - "8080:8080/tcp"
+    networks:
+      default:
+        ipv4_address: 172.18.0.2
+
+  mysql8:
+    image: mysql:8
+    container_name: mysql8
+    restart: always
+    volumes:
+      - /data/mysql8/data/:/var/lib/mysql/
+      - /data/mysql8/config/:/etc/mysql/
+    ports:
+      - "3306"
+    networks:
+      default:
+        ipv4_address: 172.18.0.3
+
+  kb:
+    image: atlassian/confluence-server
+    container_name: kb
+    restart: always
+    depends_on:
+      - traefik
+      - mysql8
+      - auth
+    links:
+      - mysql8
+      - auth
+    environment:
+      - ATL_PROXY_NAME=kb.thelab.ms
+      - ATL_PROXY_PORT=443
+      - ATL_TOMCAT_SCHEME=https
+      - ATL_TOMCAT_SECURE=true
+    volumes:
+      - /data/atlassian/confluence:/var/atlassian/application-data/confluence
+      - /data/atlassian/mysql_plugin/mysql-connector-java-8.0.21.jar:/opt/atlassian/confluence/confluence/WEB-INF/lib/mysql-connector-java-8.0.21.jar
+      - /etc/localtime:/etc/localtime:ro
+    networks:
+      default:
+        ipv4_address: 172.18.0.5
+
+  jira:
+#    image: atlassian/jira-core:8.12.0-EAP02
+    image: atlassian/jira-software:8.12.0-EAP02
+    container_name: jira
+    restart: always
+    depends_on:
+      - traefik
+      - mysql8
+      - auth
+    links:
+      - mysql8
+      - auth
+    environment:
+      - ATL_PROXY_NAME=jira.thelab.ms
+      - ATL_PROXY_PORT=443
+      - ATL_TOMCAT_SCHEME=https
+      - ATL_TOMCAT_SECURE=true
+    volumes:
+      - /data/atlassian/jira:/var/atlassian/application-data/jira
+      - /data/atlassian/mysql_plugin/mysql-connector-java-8.0.21.jar:/opt/atlassian/jira/lib/mysql-connector-java-8.0.21.jar
+      - /etc/localtime:/etc/localtime:ro
+    networks:
+      default:
+        ipv4_address: 172.18.0.7
+
+  thelabms:
+    image: wordpress:latest
+    container_name: thelabms
+    restart: always
+    depends_on:
+      - mysql8
+      - auth
+      - traefik
+    links:
+      - mysql8
+      - auth
+    volumes:
+      - /data/wordpress/:/var/www/html/
+      - /etc/localtime:/etc/localtime:ro
+    networks:
+      default:
+        ipv4_address: 172.18.0.8
+
+  members:
+    build: members
+    container_name: members
+    restart: always
+    depends_on:
+      - mysql8
+      - auth
+      - traefik
+    links:
+      - mysql8
+      - auth
+    environment:
+      - WHMCS_SERVER_IP=13.65.37.53
+    volumes:
+      - /data/whmcs/website/:/var/www/html/
+      - /data/whmcs/php/php.ini:/usr/local/etc/php/php.ini
+      - /data/whmcs/ioncube:/usr/local/ioncube
+      - /etc/localtime:/etc/localtime:ro
+    labels:
+      traefik.frontend.passHostHeader: 'true'
+    networks:
+      default:
+        ipv4_address: 172.18.0.6
