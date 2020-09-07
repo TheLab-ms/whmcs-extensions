@@ -23,6 +23,7 @@ add_hook('CustomFieldSave', 1, function($vars) {
         }
 
         if ($new_badge_id) {
+            // Check if valid Waiver has been provided.
             logActivity('TODO: Activate new badge: ' . $new_badge_id, 0);
         }
     }
