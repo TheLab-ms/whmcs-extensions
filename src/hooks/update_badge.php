@@ -4,7 +4,7 @@ require_once  __DIR__ . '/badge_controller.php';
 
 use WHMCS\Database\Capsule;
 use WHMCS\User\Client;
-use Illuminate\Database\Query\Builder;
+#use Illuminate\Database\Query\Builder;
 
 # https://developers.whmcs.com/hooks-reference/everything-else/
 # Using the CustomFieldSave because if we use ClientEdit, we wouldn't have the before/after values.

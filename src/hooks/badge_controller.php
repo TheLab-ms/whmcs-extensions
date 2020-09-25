@@ -16,16 +16,18 @@ if (!function_exists('logActivity')) {
 class BadgeController
 {
     public $guzzle_client;
+    private $has_rebooted = FALSE;
+    private $handler_stack;
 
     public function __construct() {
-        $stack = HandlerStack::create();
-        $stack->push(GuzzleRetryMiddleware::factory());
+        $this->handler_stack = HandlerStack::create();
+        $this->handler_stack->push(GuzzleRetryMiddleware::factory());
 
         $jar = new \GuzzleHttp\Cookie\CookieJar;
 
         $this->guzzle_client = new \GuzzleHttp\Client([
             'timeout'  => 10.0,
-            'handler' => $stack,
+#            'handler' => $stack,
             'max_retry_attempts' => 5,
             'retry_on_timeout' => TRUE,
         #    'cookies' => $jar,
@@ -34,10 +36,11 @@ class BadgeController
 
     # Apparently, the ACS doesn't care if you login.  That's scary.
     function login() {
-        #echo("&login()" . PHP_EOL);
+        logActivity("&login()");
         # Weird.  Must add require here instead of at the top.  I think it's because of the hook.  require_once doesn't work either
         require __DIR__ . '/config.php';
         $response = $this->guzzle_client->request('POST', $BADGE_ACS_LOGIN_ENDPOINT, [
+            'handler' => $this->handler_stack,
             'form_params' => [
                 'username' => $BADGE_ACS_USERNAME,
                 'pwd' => $BADGE_ACS_PASSWORD,
@@ -47,12 +50,26 @@ class BadgeController
         $status_code = $response->getStatusCode();
         #print("status_code=$status_code\n");
         $body = (string) $response->getBody();
+        $regex_results = array();
+        preg_match('/Web Controller/', $body, $regex_results);
+        if ($regex_results) {
+            return TRUE;
+        } else {
+            return FALSE;
+        }
         #print("$body\n");
     }
 
+    # NOTE: If you add a badge that already exists, it returns 200 and nothing changes in the system
     function add_badge($badge_id, $name) {
         #logActivity("&add_badge($name, $badge_id)");
         logActivity("&add_badge($badge_id, $name)");
+
+        # Controller can reboot at any point.  Better to force the reboot before making a change
+        if (!$this->has_rebooted) {
+            $this->reboot();
+        }
+
         # Weird.  Must add require here instead of at the top.  I think it's because of the hook.  require_once doesn't work either
         require __DIR__ . '/config.php';
         $response = $this->guzzle_client->request('POST', $BADGE_ACS_ADD_USER_ENDPOINT, [
@@ -76,7 +93,13 @@ class BadgeController
     }
 
     function delete_badge($badge_id) {
-        logActivity("&delete_badge($badge_id)" . PHP_EOL);
+        logActivity("&delete_badge($badge_id)");
+
+        # Controller can reboot at any point.  Better to force the reboot before making a change
+        if (!$this->has_rebooted) {
+            $this->reboot();
+        }
+
         $acs_id = $this->get_acs_id_from_badge_id($badge_id);
         if (!$acs_id) {
             echo("Unable to find singular ACS ID.  Aborting\n");
@@ -97,7 +120,7 @@ class BadgeController
         $result = 0;
 
         # Can't just Search for user.  Crappy software needs to prime search first
-        $response = $this->guzzle_client->request('POST', $BADGE_ACS_CONFIG_ENDPOINT, [
+        $response = $this->guzzle_client->request('POST', $BADGE_ACS_HEADER_ENDPOINT, [
             'form_params' => [
                 's2' => 'Users',
             ]
@@ -144,8 +167,56 @@ class BadgeController
                 'D' . $acs_id => 'Delete'
             ]
         ]);
+    }
+
+    function reboot() {
+        logActivity("&reboot()");
+        require __DIR__ . '/config.php';
+
+        # Gotta prime the reboot
+        try {
+            $response = $this->guzzle_client->request('POST', $BADGE_ACS_CONFIG_ENDPOINT, [
+                'form_params' => [
+                    'E16' => 'Reboot'
+                ]
+            ]);
+        } catch (Exception $e) {
+            logActivity("&reboot()::Prep Reboot operation timed out.");
+        }
         $status_code = $response->getStatusCode();
-        #print("status_code=$status_code\n");
+
+        # Do the reboot!
+        try {
+            $response = $this->guzzle_client->request('POST', $BADGE_ACS_CONFIG_ENDPOINT, [
+                'form_params' => [
+                    'Reboot' => 'Reboot'
+                ]
+            ]);
+        } catch (Exception $e) {
+            logActivity("&reboot()::Reboot operation timed out.  Expected behavior.");
+        }
+        #$this->validate_reboot();
+
+        $i = 0;
+        while (!$this->login()) {
+            $i++;
+            $this->login();
+            if ($i >= 5) {
+                logActivity("Tried to login too many times");
+                break;
+            }
+        }
+        #$this->validate_login();
+    }
+
+    function validate_reboot() {
+        logActivity("&validate_reboot()");
+        require __DIR__ . '/config.php';
+        print($this->handler_stack);
+        $this->guzzle_client->request('GET', $BADGE_ACS_CONFIG_ENDPOINT, [
+            'handler' => $this->handler_stack,
+        ]);
+
     }
 
     function confirm_delete_op($acs_id) {
@@ -162,9 +233,10 @@ class BadgeController
     }
 
     function validate_login() {
+        logActivity("&validate_login()");
         # Weird.  Must add require here instead of at the top.  I think it's because of the hook.  require_once doesn't work either
         require __DIR__ . '/config.php';
-        $response = $this->guzzle_client->request('POST', $BADGE_ACS_CONFIG_ENDPOINT, [
+        $response = $this->guzzle_client->request('POST', $BADGE_ACS_LOGIN_ENDPOINT, [
             'form_params' => [
                 's5' => 'Configure'
             ]
@@ -180,12 +252,8 @@ class BadgeController
             return;
         }
     }
-
 }
 
 #$badge_controller = new BadgeController();
+#$badge_controller->add_badge(1111111, "DELETE ME 2");
 #$badge_controller->delete_badge(1111111);
-#$badge_controller->add_badge(1111111, "DELETE ME");
-#login();
-#validate_login();
-#get_acs_id_from_badge_id(1111111);
