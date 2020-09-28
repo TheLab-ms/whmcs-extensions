@@ -1,11 +1,11 @@
 <?php
 
-require_once __DIR__ . '/vendor/autoload.php';
+#require_once __DIR__ . '/vendor/autoload.php';
 require __DIR__ . '/config.php';
 
 use GuzzleHttp\Client;
-use GuzzleHttp\HandlerStack;
-use GuzzleRetry\GuzzleRetryMiddleware;
+#use GuzzleHttp\HandlerStack;
+#use GuzzleRetry\GuzzleRetryMiddleware;
 
 if (!function_exists('logActivity')) {
     function logActivity($message) {
@@ -16,20 +16,19 @@ if (!function_exists('logActivity')) {
 class BadgeController
 {
     public $guzzle_client;
-    private $has_rebooted = FALSE;
     private $handler_stack;
 
     public function __construct() {
-        $this->handler_stack = HandlerStack::create();
-        $this->handler_stack->push(GuzzleRetryMiddleware::factory());
+#        $this->handler_stack = HandlerStack::create();
+#        $this->handler_stack->push(GuzzleRetryMiddleware::factory());
 
         $jar = new \GuzzleHttp\Cookie\CookieJar;
 
         $this->guzzle_client = new \GuzzleHttp\Client([
             'timeout'  => 10.0,
 #            'handler' => $stack,
-            'max_retry_attempts' => 5,
-            'retry_on_timeout' => TRUE,
+#            'max_retry_attempts' => 5,
+#            'retry_on_timeout' => TRUE,
         #    'cookies' => $jar,
         ]);
     }
@@ -40,7 +39,7 @@ class BadgeController
         # Weird.  Must add require here instead of at the top.  I think it's because of the hook.  require_once doesn't work either
         require __DIR__ . '/config.php';
         $response = $this->guzzle_client->request('POST', $BADGE_ACS_LOGIN_ENDPOINT, [
-            'handler' => $this->handler_stack,
+#            'handler' => $this->handler_stack,
             'form_params' => [
                 'username' => $BADGE_ACS_USERNAME,
                 'pwd' => $BADGE_ACS_PASSWORD,
@@ -66,9 +65,7 @@ class BadgeController
         logActivity("&add_badge($badge_id, $name)");
 
         # Controller can reboot at any point.  Better to force the reboot before making a change
-        if (!$this->has_rebooted) {
-            $this->reboot();
-        }
+        $this->reboot();
 
         # Weird.  Must add require here instead of at the top.  I think it's because of the hook.  require_once doesn't work either
         require __DIR__ . '/config.php';
@@ -96,9 +93,7 @@ class BadgeController
         logActivity("&delete_badge($badge_id)");
 
         # Controller can reboot at any point.  Better to force the reboot before making a change
-        if (!$this->has_rebooted) {
-            $this->reboot();
-        }
+        $this->reboot();
 
         $acs_id = $this->get_acs_id_from_badge_id($badge_id);
         if (!$acs_id) {
@@ -131,7 +126,6 @@ class BadgeController
         #logActivity($body);
         #echo $body . PHP_EOL;
 
-        logActivity("BADGE_ACS_SEARCH_ENDPOINT=$BADGE_ACS_SEARCH_ENDPOINT");
         $response = $this->guzzle_client->request('POST', $BADGE_ACS_SEARCH_ENDPOINT, [
             'form_params' => [
                 'US21' => $badge_id,
@@ -197,24 +191,27 @@ class BadgeController
         }
         #$this->validate_reboot();
 
-        $i = 0;
-        while (!$this->login()) {
-            $i++;
-            $this->login();
-            if ($i >= 5) {
-                logActivity("Tried to login too many times");
-                break;
-            }
-        }
+        # Super simple, but it works.
+        sleep(60);
+        $this->login();
+#        $i = 0;
+#        while (!$this->login()) {
+#            $i++;
+#            $this->login();
+#            if ($i >= 5) {
+#                logActivity("Tried to login too many times");
+#                break;
+#            }
+#        }
         #$this->validate_login();
     }
 
     function validate_reboot() {
         logActivity("&validate_reboot()");
         require __DIR__ . '/config.php';
-        print($this->handler_stack);
+#        print($this->handler_stack);
         $this->guzzle_client->request('GET', $BADGE_ACS_CONFIG_ENDPOINT, [
-            'handler' => $this->handler_stack,
+#            'handler' => $this->handler_stack,
         ]);
 
     }

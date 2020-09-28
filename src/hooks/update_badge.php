@@ -1,10 +1,10 @@
 <?php
 
 require_once  __DIR__ . '/badge_controller.php';
+require_once  __DIR__ . '/whmcs_controller.php';
 
 use WHMCS\Database\Capsule;
 use WHMCS\User\Client;
-#use Illuminate\Database\Query\Builder;
 
 # https://developers.whmcs.com/hooks-reference/everything-else/
 # Using the CustomFieldSave because if we use ClientEdit, we wouldn't have the before/after values.
@@ -18,7 +18,7 @@ add_hook('CustomFieldSave', 1, function($vars) {
     $field_name = Capsule::table('tblcustomfields')->where('id', $field_id)->value('fieldname');
     #logActivity('FIELD NAME: ' . $field_name);
     if ($field_name == 'Badge Number') {
-        $old_value = Capsule::table('tblcustomfieldsvalues')->where('fieldid', $field_id)->where('relid', $vars['relid'])->value('value');
+        $old_value = Capsule::table('tblcustomfieldsvalues')->where('fieldid', $field_id)->where('relid', $client_id)->value('value');
         #logActivity('OLD VALUE: ' . $old_value);
 
         if ($old_value == $new_badge_id) {
@@ -28,19 +28,13 @@ add_hook('CustomFieldSave', 1, function($vars) {
 
         $badge_controller = new BadgeController();
         if ($old_value != '') {
-            logActivity('Badge id HAS changed.  Deactivate old badge id: ' . $old_value);
-            try {
-                $badge_controller->delete_badge($old_value);
-            } catch (Exception $e) {
-                $err_msg = "update_badge.php: Couldn't delete badge $old_value for $client_id. {$e->getMessage()}";
-                logActivity($err_msg);
-                echo $err_msg;
-            }
+            logActivity('Badge id HAS changed.  Open Ticket to deactivate old badge id: ' . $old_value);
+            open_ticket($client_id, "DELETE Badge ID $old_value", "User updated badge id ($old_value) with $new_badge_id");
         }
 
         if ($new_badge_id) {
             // Check if valid Waiver has been provided.
-            logActivity("TODO: Activate new badge: " . $new_badge_id . " for Client $client_id");
+            logActivity("Activate new badge: " . $new_badge_id . " for Client $client_id");
             try {
                 $client = Client::findOrFail($client_id);
                 $full_name = $client->firstName . ' ' . $client->lastName;
