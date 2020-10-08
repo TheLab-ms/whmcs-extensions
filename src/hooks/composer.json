@@ -1,9 +1,0 @@
-{
-    "name": "thelab-ms/whmcs-extensions",
-    "description": "Webhooks and extensions for WHMCS",
-    "require": {
-        "smartwaiver/smartwaiver-sdk": "*",
-        "sendgrid/sendgrid": "~7",
-        "caseyamcl/guzzle_retry_middleware": "^2.4"
-    }
-}
