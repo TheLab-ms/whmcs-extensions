@@ -17,6 +17,5 @@ add_hook('ClientAdd', 1, function($vars) {
         . "Click Preview\n"
         . "Open in new tab\n"
         . "Copy the unique ID from the URL in to the user profile located: https://{$_SERVER['HTTP_HOST']}/admin/clientssummary.php?userid=$client_id";
-    #open_ticket($client_id, "Validate waiver for $first_name $last_name ($client_id)", "Go to https://app.smartwaiver.com/console, search for $first_name $last_name $email");
-    open_ticket($client_id, $subject, $body);
+    open_ticket($subject, $body);
 });

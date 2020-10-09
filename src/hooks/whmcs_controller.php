@@ -6,14 +6,13 @@ if (!function_exists('logActivity')) {
     }
 }
 
-function open_ticket($client_id, $subject, $message) {
-    logActivity("&open_ticket($client_id, $message)");
+function open_ticket($subject, $message) {
+    logActivity("&open_ticket($message)");
     $command = 'OpenTicket';
     $values = array(
         'deptid' => '1', # General 
         'subject' => $subject,
         'message' => $message,
-        'clientid' => $client_id,
         'priority' => 'Medium',
         'responsetype' => 'json',
     );
@@ -29,4 +28,4 @@ function open_ticket($client_id, $subject, $message) {
     }
 }
 
-#open_ticket(1, 'test');
+#open_ticket('test', 'foobar');

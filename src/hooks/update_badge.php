@@ -29,7 +29,7 @@ add_hook('CustomFieldSave', 1, function($vars) {
         $badge_controller = new BadgeController();
         if ($old_value != '') {
             logActivity('Badge id HAS changed.  Open Ticket to deactivate old badge id: ' . $old_value);
-            open_ticket($client_id, "DELETE Badge ID $old_value", "User updated badge id ($old_value) with $new_badge_id");
+            open_ticket("DELETE Badge ID $old_value", "User $client_id updated badge from $old_value to $new_badge_id");
         }
 
         if ($new_badge_id) {
