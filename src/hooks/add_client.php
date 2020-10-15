@@ -17,5 +17,5 @@ add_hook('ClientAdd', 1, function($vars) {
         . "Click Preview\n"
         . "Open in new tab\n"
         . "Copy the unique ID from the URL in to the user profile located: https://{$_SERVER['HTTP_HOST']}/admin/clientssummary.php?userid=$client_id";
-    open_ticket($subject, $body);
+    open_ticket($subject, $body, $client_id);
 });

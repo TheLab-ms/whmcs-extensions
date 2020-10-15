@@ -6,25 +6,26 @@ if (!function_exists('logActivity')) {
     }
 }
 
-function open_ticket($subject, $message) {
-    logActivity("&open_ticket($message)");
+function open_ticket($subject, $message, $client_id) {
+    logActivity("&open_ticket($subject, $client_id)");
     $command = 'OpenTicket';
     $values = array(
         'deptid' => '1', # General 
         'subject' => $subject,
         'message' => $message,
         'priority' => 'Medium',
-        'responsetype' => 'json',
+        'clientid' => $client_id,
     );
 
-    $adminuser = 'tommy';
+    $adminuser = 'cto';
 
     // Call the localAPI function
     $results = localAPI($command, $values, $adminuser);
     if ($results['result'] == 'success') {
         logActivity('Ticket created successsfully');
     } else {
-        logActivity("An Error Occurred: " . $results['result']);
+        logActivity("An Error Occurred opening a ticket");
+        logActivity(json_encode($results));
     }
 }
 
