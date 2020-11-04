@@ -21,5 +21,4 @@ add_hook('ClientAdd', 1, function($vars) {
         . "Go to https://app.signnow.com, search for $first_name $last_name $email\n"
         . "Copy the unique ID from the URL in to the user profile located: https://{$_SERVER['HTTP_HOST']}/admin/clientssummary.php?userid=$client_id";
     add_ticket_note($ticket_id, $message);
-
 });
