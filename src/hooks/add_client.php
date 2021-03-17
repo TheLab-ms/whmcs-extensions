@@ -1,6 +1,7 @@
 <?php
 
 require_once  __DIR__ . '/whmcs_controller.php';
+require_once  __DIR__ . '/notify_discord.php';
 
 # https://developers.whmcs.com/hooks-reference/client/
 # For a quick test, change to "ClientEdit" and you can edit the client instead of creating a new one.  Parameters are the same.
@@ -10,6 +11,7 @@ add_hook('ClientAdd', 1, function($vars) {
     $client_id = $vars['userid'];
     $first_name = $vars['firstname'];
     $last_name = $vars['lastname'];
+    $name = $first_name . ' ' . $last_name;
     $email = $vars['email'];
     $subject = "Thank you for becoming a member of TheLab.ms!";
     $body = "We are in the process of validating your waiver, if you have not yet filled one out please go to: https://signnow.com/s/vNyBP3m1"
@@ -20,4 +22,6 @@ add_hook('ClientAdd', 1, function($vars) {
         . "Go to https://app.signnow.com, search for $first_name $last_name $email\n"
         . "Copy the unique ID from the URL in to the user profile located: https://{$_SERVER['HTTP_HOST']}/admin/clientssummary.php?userid=$client_id";
     add_ticket_note($ticket_id, $message);
+
+    notify_discord_add_client($name);
 });
