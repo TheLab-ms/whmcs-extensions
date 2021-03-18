@@ -7,7 +7,9 @@ if (!function_exists('logActivity')) {
 }
 
 function notify_discord_add_client($name) {
+    require __DIR__ . '/config.php';
     logActivity('notify_discord_add_client: ' . $name);
+    logActivity('notify_discord_add_client: URL=' . $DISCORD_WEBHOOK_ADD_CLIENT_URL);
     $curl = curl_init();
 
     curl_setopt_array($curl, array(
@@ -33,10 +35,17 @@ function notify_discord_add_client($name) {
                 ]
             }
         ]
-    }'
+    }',
+    CURLOPT_HTTPHEADER => array(
+        'Content-Type: application/json'
+      ),
     ));
 
     $response = curl_exec($curl);
+    logActivity('Curl response: ' . json_encode($response), 0);
+    $info = curl_getinfo($curl);
+    logActivity('Curl info: ' . json_encode($info), 0);
 
     curl_close($curl);
+    logActivity('notify_discord_add_client: COMPLETE');
 }
